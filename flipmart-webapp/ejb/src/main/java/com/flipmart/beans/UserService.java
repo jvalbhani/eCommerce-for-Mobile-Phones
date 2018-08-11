@@ -1,13 +1,13 @@
 package com.flipmart.beans;
 
 import com.flipmart.service.UserServiceLocal;
-import javax.ejb.Stateless;
 
 import com.flipmart.persistence.Users;
 import com.flipmart.utils.PasswordHash;
+import com.flipmart.utils.UserValidation;
 import java.security.NoSuchAlgorithmException;
 import java.security.spec.InvalidKeySpecException;
-import java.util.logging.Level;
+import javax.ejb.Stateful;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
@@ -18,7 +18,7 @@ import org.apache.log4j.Logger;
  *
  * @author Shagufta
  */
-@Stateless
+@Stateful
 public class UserService implements UserServiceLocal {
 
     private final EntityManager entityManager;
@@ -56,7 +56,6 @@ public class UserService implements UserServiceLocal {
             LOGGER.info("Persisting user");
             entityManager.persist(user);
 
-            
             transactionObj.commit();
             LOGGER.info("Persisting user success");
         } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
@@ -77,25 +76,14 @@ public class UserService implements UserServiceLocal {
             query.setParameter("email", email);
 
             Users result = (Users) query.getSingleResult();
-            LOGGER.info("Result from database: "+result);
+            LOGGER.info("Result from database: " + result);
 
             if (result != null) {
-                LOGGER.info ("Verifing User his password: "+result.getPassword());
-                boolean valid = verifyUser(result, userPassword);
+                LOGGER.info("Verifing User his password: " + result.getPassword());
+                boolean valid = UserValidation.verifyUser(result, userPassword);
                 if (valid) {
-                    Users responseUser = new Users();
-                    
-                    responseUser.setActive(result.isActive());
-                    responseUser.setColorProductCart(result.getColorProductCart());
-                    responseUser.setContactNo(result.getContactNo());
-                    responseUser.setEmail(result.getEmail());
-                    responseUser.setFirstName(result.getFirstName());
-                    responseUser.setLastName(result.getLastName());
-                    responseUser.setStreetAddress(result.getStreetAddress());
-                    responseUser.setOrderList(result.getOrderList());
-                    responseUser.setPincode(result.getPincode());
-                    responseUser.setUserId(result.getUserId());
-                    
+                    Users responseUser = prepareResponseUser(result);
+
                     return responseUser;
                 }
             }
@@ -104,22 +92,6 @@ public class UserService implements UserServiceLocal {
         }
         LOGGER.info("user object is null");
         return null;
-    }
-
-    private Boolean verifyUser(Users user, String password) {
-        boolean valid = false;
-        try {
-            LOGGER.info ("calling password hash");
-            
-            String verifyPassword = user.getPassword();
-            valid = PasswordHash.validatePassword(password, verifyPassword);
-            
-            LOGGER.info ("User valid? "+valid);
-            return valid;
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
-            LOGGER.error(ex);
-        }
-        return valid;
     }
 
     @Override
@@ -139,6 +111,53 @@ public class UserService implements UserServiceLocal {
             LOGGER.error("could not find details of the user");
         }
         LOGGER.error("user name is null");
+        return null;
+    }
+
+    private Users prepareResponseUser(Users result) {
+        Users responseUser = new Users();
+
+        responseUser.setActive(result.isActive());
+        responseUser.setColorProductCart(result.getColorProductCart());
+        responseUser.setContactNo(result.getContactNo());
+        responseUser.setEmail(result.getEmail());
+        responseUser.setFirstName(result.getFirstName());
+        responseUser.setLastName(result.getLastName());
+        responseUser.setStreetAddress(result.getStreetAddress());
+        responseUser.setOrderList(result.getOrderList());
+        responseUser.setPincode(result.getPincode());
+        responseUser.setUserId(result.getUserId());
+
+        return responseUser;
+    }
+
+    @Override
+    public void updateUser(Users user) {
+        if (!transactionObj.isActive()) {
+            transactionObj.begin();
+        }
+
+        entityManager.merge(user);
+        transactionObj.commit();
+    }
+
+    @Override
+    public Users findByEmail(String email) {
+        if (!transactionObj.isActive()) {
+            transactionObj.begin();
+        }
+        if (email != null) {
+            Query query = entityManager.createNamedQuery("findUsersByEmail");
+            query.setParameter("email", email);
+            Users user = (Users) query.getSingleResult();
+
+            if (user != null) {
+                System.out.println("Data from backend " + user);
+                return user;
+            }
+            LOGGER.error("could not find details of the user");
+        }
+        LOGGER.error("email is null");
         return null;
     }
 

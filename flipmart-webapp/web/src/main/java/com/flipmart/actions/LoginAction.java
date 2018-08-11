@@ -3,8 +3,6 @@ package com.flipmart.actions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
-import java.security.spec.InvalidKeySpecException;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -14,18 +12,18 @@ import org.apache.struts2.convention.annotation.Action;
 import org.apache.struts2.convention.annotation.Result;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.flipmart.persistence.City;
-import com.flipmart.persistence.Pincode;
-import com.flipmart.persistence.State;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.flipmart.persistence.Users;
-import com.flipmart.service.PincodeServiceLocal;
 import com.flipmart.service.UserServiceLocal;
 import com.flipmart.util.FlipmartConstants;
 import com.opensymphony.xwork2.ActionSupport;
+import java.util.logging.Level;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.servlet.http.HttpServletResponse;
+
+import javax.servlet.http.HttpServletResponseWrapper;
 import org.apache.log4j.Logger;
 
 @Action(value = "login", results = {
@@ -39,116 +37,18 @@ public class LoginAction extends ActionSupport {
 
     @Override
     public String execute() {
-        String sample = "Shagufta";
+        // String sample = "Shagufta";
         return SUCCESS;
     }
 
-    @Action("user")
-    public void addUserDetails() throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
-        ObjectMapper mapper = new ObjectMapper();
-
-        request = ServletActionContext.getRequest();
-
-        String jsonResponse = IOUtils.toString(request.getInputStream(), FlipmartConstants.CHARACTER_ENCODING);
-        LOGGER.info("JSON DATA : " + jsonResponse);
-        Users user = mapper.readValue(jsonResponse, Users.class);
-        createNewUser(user);
-        //findPincode(310041);
-    }
-
-    public void createNewUser(Users userDetails) throws NoSuchAlgorithmException, InvalidKeySpecException {
-
-        System.out.println("User Datils: " + userDetails);
-
-        Context ctx = null;
-        try {
-            ctx = new InitialContext();
-            UserServiceLocal us = (UserServiceLocal) ctx.lookup("java:global/flipmart-webapp-ear/flipmart-webapp-ejb/UserService!com.flipmart.service.UserServiceLocal");
-
-            //String password = userDetails.getPassword();
-            //password = PasswordHash.generatePasswordHash(password);
-            userDetails.setPassword(userDetails.getPassword());
-
-            State state = new State();
-            state.setStateName("Rajasthan");
-
-            City city = new City();
-            city.setState(state);
-            city.setCityName("jaipur");
-
-            Pincode pincode = new Pincode();
-            pincode.setPincode(310041);
-            pincode.setCity(city);
-
-            userDetails.setPincode(pincode);
-
-            us.addUser(userDetails);
-        } catch (NamingException e) {
-            System.out.println(e.getMessage());
-        } finally {
-            if (ctx != null) {
-                try {
-                    ctx.close();
-                } catch (NamingException t) {
-                }
-            }
-        }
-    }
-
-        @Action("pincode")
-    public void findPincode() throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
-            System.out.println("aayaa");
-        request = ServletActionContext.getRequest();
-        String jsonResponse = IOUtils.toString(request.getInputStream(), FlipmartConstants.CHARACTER_ENCODING);
-        System.out.println("jsonResponse : " + jsonResponse);
-        JsonNode data = mapper.readTree(jsonResponse);
-        long pincode = data.get("pincode").get("pincode").asLong();
-        System.out.println("pincode fron json= "+pincode);
-        response  = ServletActionContext.getResponse();
-        response.setContentType("application/json");
-        LOGGER.info("response:"+response);
-        response.getWriter().write(findPincode(pincode).toString());
-    }
-    
-    public JsonNode findPincode(long pincode) throws JsonProcessingException, IOException {
-        //LOGGER.info("Pincode : " + pincode);
-        System.out.println("pincode from json = "+pincode);
-        ObjectMapper mapper = new ObjectMapper();
-        Context ctx = null;
-        try {
-            ctx = new InitialContext();
-            PincodeServiceLocal pincodeService = (PincodeServiceLocal) ctx.lookup("java:global/flipmart-webapp-ear/flipmart-webapp-ejb/PincodeService!com.flipmart.service.PincodeServiceLocal");
-
-            Pincode pincodeObject = pincodeService.findByPincode(pincode);
-            String jsonInString = mapper.writeValueAsString(pincodeObject);
-            JsonNode responseData = mapper.readTree(jsonInString);
-            //System.out.println(responseData.toString());
-            // {"pincode":310041,"city":{"cityId":1,"cityName":"udaipur","state":{"stateId":1,"stateName":"rajasthan"}}}
-            //System.out.println("fetched pincode: "+ responseData.get("city").get("cityName").asText());
-            return responseData;
-        } catch (NamingException e) {
-            // logger.log(Level.SEVERE,"Unable to retrieve the UserService.",e);
-            System.out.println("----" + e.getMessage());
-        } finally {
-            if (ctx != null) {
-                try {
-                    ctx.close();
-                } catch (NamingException t) {
-                }
-            }
-        }
-        return null;
-    }
-
-
     @Action(value = "validate")
     public void validateUser() throws IOException, JsonProcessingException {
+
         request = ServletActionContext.getRequest();
         String jsonResponse = IOUtils.toString(request.getInputStream(), FlipmartConstants.CHARACTER_ENCODING);
 
         ObjectMapper mapper = new ObjectMapper();
-        System.out.println(" -> " + jsonResponse);
+        LOGGER.info(" -> " + jsonResponse);
 
         Users user = mapper.readValue(jsonResponse, Users.class);
 
@@ -164,21 +64,21 @@ public class LoginAction extends ActionSupport {
 
             if (validUser != null) {
                 String responseJSON = mapper.writeValueAsString(validUser);
-                response.getWriter().write(responseJSON);
+
+                JsonNode jsonNode = mapper.readTree(responseJSON);
+                ObjectNode objectNode = (ObjectNode) jsonNode;
+                objectNode.put("valid", true);
+
+                LOGGER.info("Response: " + objectNode.toString());
+
+                response.getWriter().write(objectNode.toString());
             } else {
                 String responseJSON = "{\"valid\":false}";
                 response.getWriter().write(responseJSON);
             }
-
-        } catch (NamingException e) {
-            System.out.println(e.getMessage());
-        } finally {
-            if (ctx != null) {
-                try {
-                    ctx.close();
-                } catch (NamingException t) {
-                }
-            }
+        } catch (NamingException ex) {
+            //java.util.logging.Logger.getLogger(LoginAction.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.error(ex);
         }
 
     }
