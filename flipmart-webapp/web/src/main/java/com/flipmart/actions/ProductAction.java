@@ -1,7 +1,10 @@
 package com.flipmart.actions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.flipmart.persistence.ColorProduct;
+import com.flipmart.persistence.ColorProductId;
 import com.flipmart.persistence.Product;
+import com.flipmart.service.ColorProductServiceLocal;
 import com.flipmart.service.ProductServiceLocal;
 import org.apache.struts2.convention.annotation.Action;
 import org.apache.struts2.convention.annotation.Result;
@@ -11,6 +14,7 @@ import com.opensymphony.xwork2.ActionSupport;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.logging.Logger;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -37,7 +41,7 @@ public class ProductAction extends ActionSupport {
 	}
         
         @Action(value = "allProducts")
-        public String getAllProducts() throws IOException
+        public void getAllProducts() throws IOException
         {
             ObjectMapper mapper = new ObjectMapper();
             
@@ -50,7 +54,9 @@ public class ProductAction extends ActionSupport {
                 ByteArrayOutputStream out = new ByteArrayOutputStream();
                 mapper.writeValue(out, list);
                 final byte[] data = out.toByteArray();
-                return (new String(data));           // sending out the list of all products     
+                response = ServletActionContext.getResponse();
+                response.setContentType("application/json");
+                response.getWriter().write(new String(data));           
             } 
             catch (IOException | NamingException e) {                
                 System.out.println(e.getMessage());                
@@ -64,7 +70,6 @@ public class ProductAction extends ActionSupport {
                     }
                 }
             } 
-            return "";
         }
         @Action("addProduct")
         public void addProduct()
@@ -91,4 +96,40 @@ public class ProductAction extends ActionSupport {
                 }
             }
         }
+        @Action(value = "getProduct")
+        public void getProduct() throws IOException
+        {
+            ObjectMapper mapper = new ObjectMapper();
+            
+            Context ctx = null;
+            try {
+                ctx = new InitialContext();
+                ColorProductServiceLocal cps = (ColorProductServiceLocal) ctx.lookup("java:global/flipmart-webapp-ear/flipmart-webapp-ejb/ColorProductService!com.flipmart.service.ColorProductServiceLocal");
+                ColorProductId cpID = new ColorProductId();
+                cpID.setColorId(1);
+                cpID.setProductId(1);
+                ColorProduct product= cps.findColorProductById(cpID);
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                //mapper.writeValue(out, list);
+                //final byte[] data = out.toByteArray();
+                
+                //response = ServletActionContext.getResponse();
+                //response.setContentType("application/json");
+                //response.getWriter().write(new String(data));
+                LOG.info("this is the color product"+product.toString());
+            } 
+            catch (NamingException e) {                
+                System.out.println(e.getMessage());                
+            } 
+            finally 
+            {
+                if (ctx != null) {
+                    try {
+                        ctx.close();
+                    } catch (NamingException t) {
+                    }
+                }
+            } 
+        }
+    private static final Logger LOG = Logger.getLogger(ProductAction.class.getName());
 }

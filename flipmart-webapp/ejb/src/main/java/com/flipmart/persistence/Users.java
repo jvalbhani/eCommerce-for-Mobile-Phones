@@ -17,6 +17,7 @@ import javax.persistence.ManyToOne;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 @NamedQueries(
@@ -24,6 +25,10 @@ import javax.persistence.Table;
             @NamedQuery(
                     name = "findUsersByFirstName",
                     query = "from Users u where u.firstName = :firstName"
+            ),
+            @NamedQuery(
+                    name = "findUserByEmail",
+                    query = "from Users u where u.email= :email"
             )
         }
 )
@@ -34,6 +39,7 @@ public class Users implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(name = "user_SEQ", allocationSize = 5)
     @Column(name = "user_id")
     private long userId;
 
@@ -49,9 +55,9 @@ public class Users implements Serializable {
     @Column(name = "password")
     private String password;
 
-	@ManyToOne
-	@JoinColumn(name = "pincode")
-	private Pincode pincode;
+    @ManyToOne
+    @JoinColumn(name = "pincode")
+    private Pincode pincode;
 
     @Column(name = "street_address")
     private String streetAddress;
@@ -62,13 +68,6 @@ public class Users implements Serializable {
     @Column(name = "active")
     private boolean active;
 
-//	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-//	@JoinTable(name = "cart", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "product_id"))
-//	private List<Product> products = new ArrayList<Product>();
-//
-//	@ManyToMany(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
-//	@JoinTable(name = "cart", joinColumns = @JoinColumn(name = "user_id"), inverseJoinColumns = @JoinColumn(name = "color_id"))
-//	private List<Product> colors = new ArrayList<Product>();
     @ManyToMany(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "cart", joinColumns = @JoinColumn(name = "user_id"))
     private List<ColorProduct> colorProductCart = new ArrayList<ColorProduct>();
@@ -174,6 +173,6 @@ public class Users implements Serializable {
 
     @Override
     public String toString() {
-        return "Users{" + "userId=" + userId + ", firstName=" + firstName + ", lastName=" + lastName + ", email=" + email + ", pincode=" + pincode + ", streetAddress=" + streetAddress + ", contactNo=" + contactNo + ", active=" + active + '}';
+        return "Users{ password= " + password + "userId=" + userId + ", firstName=" + firstName + ", lastName=" + lastName + ", email=" + email + ", pincode=" + pincode + ", streetAddress=" + streetAddress + ", contactNo=" + contactNo + ", active=" + active + '}';
     }
 }

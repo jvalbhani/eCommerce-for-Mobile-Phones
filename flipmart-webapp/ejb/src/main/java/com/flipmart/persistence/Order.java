@@ -14,6 +14,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
 /**
@@ -26,6 +27,7 @@ public class Order implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @SequenceGenerator(name="order_SEQ", allocationSize=1)
     @Column(name="order_id")
     private Long orderId;
 
@@ -127,6 +129,8 @@ public class Order implements Serializable {
 
     @Override
     public String toString() {
-        return "com.flipmart.persistence.Order[ id=" + orderId + " ]";
-    }    
+        return "Order{" + "orderId=" + orderId + ", user=" + user + ", orderDate=" + orderDate + ", status=" + status + ", totalAmountt=" + totalAmountt + ", colorProductOrder=" + colorProductOrder + ", active=" + active + '}';
+    }
+
+   
 }

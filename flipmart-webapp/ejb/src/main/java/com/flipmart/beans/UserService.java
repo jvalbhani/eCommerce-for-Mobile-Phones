@@ -1,9 +1,13 @@
 package com.flipmart.beans;
 
 import com.flipmart.service.UserServiceLocal;
-import javax.ejb.Stateless;
 
 import com.flipmart.persistence.Users;
+import com.flipmart.utils.PasswordHash;
+import com.flipmart.utils.UserValidation;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.InvalidKeySpecException;
+import javax.ejb.Stateful;
 import javax.persistence.EntityManager;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
@@ -14,7 +18,7 @@ import org.apache.log4j.Logger;
  *
  * @author Shagufta
  */
-@Stateless
+@Stateful
 public class UserService implements UserServiceLocal {
 
     private final EntityManager entityManager;
@@ -30,44 +34,64 @@ public class UserService implements UserServiceLocal {
 
     @Override
     public Users findByUserId(Long userId) {
-        System.out.println("Find user by id");
-        return null;
+        LOGGER.info("Find user by id");
+        Users user = entityManager.find(Users.class, userId);
+
+        return user;
     }
 
     @Override
     public void addUser(Users user) {
-        LOGGER.info("Begining transaction");
+        try {
+            LOGGER.info("Begining transaction");
 
-        if (!transactionObj.isActive()) {
-            transactionObj.begin();
+            if (!transactionObj.isActive()) {
+                transactionObj.begin();
+            }
+            String password = user.getPassword();
+            password = PasswordHash.generatePasswordHash(password);
+
+            user.setPassword(password);
+
+            LOGGER.info("Persisting user");
+            entityManager.persist(user);
+
+            transactionObj.commit();
+            LOGGER.info("Persisting user success");
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException ex) {
+            LOGGER.error(ex);
         }
-        LOGGER.info("Persisting user");
-        entityManager.persist(user);
-
-        LOGGER.info("Persisting user success");
-        transactionObj.commit();
     }
 
     @Override
-    public Boolean findUserByNameAndPassword(Users user) {
+    public Users findUserByEmailAndPassword(Users user) {
         if (!transactionObj.isActive()) {
             transactionObj.begin();
         }
         if (user != null) {
-            String userName = user.getFirstName();
-            String password = user.getPassword();
-            Query query = entityManager.createQuery("SELECT u.user_id FROM USERS u WHERE first_name = " + userName + " AND password = " + password + " ;");
+            String email = user.getEmail();
+            String userPassword = user.getPassword();
+
+            Query query = entityManager.createNamedQuery("findUserByEmail");
+            query.setParameter("email", email);
+
             Users result = (Users) query.getSingleResult();
+            LOGGER.info("Result from database: " + result);
 
             if (result != null) {
-                LOGGER.info("Valid user");
-                return true;
+                LOGGER.info("Verifing User his password: " + result.getPassword());
+                boolean valid = UserValidation.verifyUser(result, userPassword);
+                if (valid) {
+                    Users responseUser = prepareResponseUser(result);
+
+                    return responseUser;
+                }
             }
             LOGGER.info("No such user found");
-            return false;
+            return null;
         }
         LOGGER.info("user object is null");
-        return false;
+        return null;
     }
 
     @Override
@@ -81,12 +105,59 @@ public class UserService implements UserServiceLocal {
             Users user = (Users) query.getSingleResult();
 
             if (user != null) {
-                System.out.println("Data from backend "+user);
+                System.out.println("Data from backend " + user);
                 return user;
             }
             LOGGER.error("could not find details of the user");
         }
         LOGGER.error("user name is null");
+        return null;
+    }
+
+    private Users prepareResponseUser(Users result) {
+        Users responseUser = new Users();
+
+        responseUser.setActive(result.isActive());
+        responseUser.setColorProductCart(result.getColorProductCart());
+        responseUser.setContactNo(result.getContactNo());
+        responseUser.setEmail(result.getEmail());
+        responseUser.setFirstName(result.getFirstName());
+        responseUser.setLastName(result.getLastName());
+        responseUser.setStreetAddress(result.getStreetAddress());
+        responseUser.setOrderList(result.getOrderList());
+        responseUser.setPincode(result.getPincode());
+        responseUser.setUserId(result.getUserId());
+
+        return responseUser;
+    }
+
+    @Override
+    public void updateUser(Users user) {
+        if (!transactionObj.isActive()) {
+            transactionObj.begin();
+        }
+
+        entityManager.merge(user);
+        transactionObj.commit();
+    }
+
+    @Override
+    public Users findByEmail(String email) {
+        if (!transactionObj.isActive()) {
+            transactionObj.begin();
+        }
+        if (email != null) {
+            Query query = entityManager.createNamedQuery("findUsersByEmail");
+            query.setParameter("email", email);
+            Users user = (Users) query.getSingleResult();
+
+            if (user != null) {
+                System.out.println("Data from backend " + user);
+                return user;
+            }
+            LOGGER.error("could not find details of the user");
+        }
+        LOGGER.error("email is null");
         return null;
     }
 

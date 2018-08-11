@@ -9,14 +9,26 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Table;
 
+@NamedQueries(
+        {
+            @NamedQuery(
+                    name = "findAdminByEmail",
+                    query = "from Admin a where a.email= :email"
+            )
+        }
+)
 @Entity
 @Table(name = "admin")
 public class Admin implements Serializable {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.SEQUENCE)
+        @SequenceGenerator(name="admin_SEQ", allocationSize=1)
 	@Column(name = "admin_id")
 	private long adminId;
 
@@ -64,10 +76,6 @@ public class Admin implements Serializable {
 		this.firstName = firstName;
 	}
 
-	public String getlastname() {
-		return lastname;
-	}
-
 	public void setlastname(String lastname) {
 		this.lastname = lastname;
 	}
@@ -89,11 +97,11 @@ public class Admin implements Serializable {
 	}
 
 
-	public String getLastname() {
+	public String getLastName() {
 		return lastname;
 	}
 
-	public void setLastname(String lastname) {
+	public void setLastName(String lastname) {
 		this.lastname = lastname;
 	}
 
@@ -133,14 +141,6 @@ public class Admin implements Serializable {
 		this.streetAddress = streetAddress;
 	}
 
-	public String getcontactNo() {
-		return contactNo;
-	}
-
-	public void setcontactNo(String contactNo) {
-		this.contactNo = contactNo;
-	}
-
 	public String getDisplayPicture() {
 		return displayPicture;
 	}
@@ -152,5 +152,10 @@ public class Admin implements Serializable {
 	public long getAdminId() {
 		return adminId;
 	}
+
+    @Override
+    public String toString() {
+        return "Admin{" + "adminId=" + adminId + ", firstName=" + firstName + ", lastname=" + lastname + ", email=" + email + ", password=" + password + ", pincode=" + pincode + ", streetAddress=" + streetAddress + ", contactNo=" + contactNo + ", displayPicture=" + displayPicture + ", active=" + active + '}';
+    }
 
 }

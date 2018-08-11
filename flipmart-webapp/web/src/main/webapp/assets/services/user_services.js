@@ -49,18 +49,18 @@ angular.module('myApp').factory('UserService', ['$http', '$q','$location','sessi
     }
         function getCity(pin) {
             var deferred = $q.defer();
-            console.log('request for city');
-//            $http.post('/flipmart-webapp-web/pincode', pin)
-//                    .then(
-//                            function (response) {
-//                                console.error('city get',response);
-//                                
-//                            },
-//                            function (errResponse) {
-//                                console.error('Error while login User');
-//                                deferred.reject(errResponse);
-//                            }
-//                    );
+            console.log('request for city',pin);
+            $http.post('/flipmart-webapp-web/pincode', pin)
+                    .then(
+                            function (response) {
+                                console.error('city get ',response.data);
+                                
+                            },
+                            function (errResponse) {
+                                console.error('Error while login User');
+                                deferred.reject(errResponse);
+                            }
+                    );
         return deferred.promise;
         }
         function userDetails(userId) {
@@ -87,6 +87,10 @@ angular.module('myApp').factory('UserService', ['$http', '$q','$location','sessi
             .then(
             sessionService.set('user',user.email),
            console.log('user loged ',user),
+           function (response) {
+               console.log(response);
+                deferred.resolve(response.data);
+            },
             function(errResponse){
                 console.error('Error while login User');
                 deferred.reject(errResponse);
@@ -102,11 +106,12 @@ angular.module('myApp').factory('UserService', ['$http', '$q','$location','sessi
     }
     
     function loggedUser(){
+        
         return sessionService.get('user');
     }
     
     function islogged(){
-        console.log('checking...');
+       // console.log('checking...');
         if(sessionService.get('user')) return true;
     }
 

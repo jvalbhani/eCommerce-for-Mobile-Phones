@@ -16,6 +16,7 @@
         <class>com.flipmart.persistence.ColorProduct</class>
         <class>com.flipmart.persistence.Order</class>
         <class>com.flipmart.persistence.Admin</class>
+        <class>com.flipmart.persistence.ProductImage</class>
         
         <properties>
             <property name="javax.persistence.jdbc.driver" value="org.postgresql.Driver" />
@@ -27,7 +28,10 @@
             <property name="format_sql" value="true"/>
             <property name="hibernate.show_sql" value="true" />
 
-<!--            <property name="javax.persistence.schema-generation.database.action"  value="drop-and-create" />
+            <!--<property name="eclipselink.weaving" value="true"/>
+            <property name="eclipselink.weaving.lazy" value="true"/>
+
+           <property name="javax.persistence.schema-generation.database.action"  value="drop-and-create" />
             <property name="hibernate.hbm2ddl.auto" value="create" />-->
 
         </properties>

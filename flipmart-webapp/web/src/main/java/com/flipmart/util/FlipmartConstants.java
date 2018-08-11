@@ -12,6 +12,7 @@ public class FlipmartConstants {
 	
 	public final static String SUCCESS = "success";
 	public final static String CLIENT_URI = "/view/client/";
+        public final static String ADMIN_URI = "/view/admin/";
 	
 	public final static String KEY_EMAIL = "email";
 	public final static String KEY_FIRST_NAME = "firstName";
@@ -24,6 +25,8 @@ public class FlipmartConstants {
 	public final static String KEY_PASSWORD = "password";
 	public final static String PBKDF2 = "PBKDF2WithHmacSHA1";
 	public final static String SHA1PRNG = "SHA1PRNG";
+        
+        public final static String CONTENT_TYPE = "application/json";
         
         public final static String JNDI_LOOKUP = "java:global/flipmart-webapp-ear/flipmart-webapp-ejb/";
 }
